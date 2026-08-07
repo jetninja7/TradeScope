@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users & Authentication
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  portfolios    Portfolio[]
+  watchlist     Watchlist[]
+  alerts        Alert[]
+  insights      AIInsight[]
+  notifications Notification[]
+}
+
+// Portfolio Management
+model Portfolio {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  holdings    Holding[]
+  alerts      Alert[]
+  insights    AIInsight[]
+
+  @@index([userId])
+}
+
+model Holding {
+  id               String    @id @default(cuid())
+  portfolioId      String
+  portfolio        Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol           String
+  assetType        AssetType
+  quantity         Float
+  avgPurchasePrice Float
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([portfolioId])
+  @@index([symbol])
+}
+
+enum AssetType {
+  STOCK
+  CRYPTO
+}
+
+model Watchlist {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  assetType AssetType
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+// Market Data
+model Asset {
+  id             String          @id @default(cuid())
+  symbol         String          @unique
+  name           String
+  assetType      AssetType
+  exchange       String?
+  logoUrl        String?
+  description    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  priceSnapshots PriceSnapshot[]
+  priceHistory   PriceHistory[]
+
+  @@index([symbol])
+  @@index([assetType])
+}
+
+model PriceSnapshot {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  price     Float
+  volume    Float?
+  marketCap Float?
+  source    String
+  timestamp DateTime @default(now())
+
+  @@index([assetId, timestamp])
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  interval  String
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float?
+  timestamp DateTime
+
+  @@unique([assetId, interval, timestamp])
+  @@index([assetId, interval, timestamp])
+}
+
+// Alerts & Insights
+model Alert {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolioId   String?
+  portfolio     Portfolio?     @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  name          String
+  condition     Json
+  isActive      Boolean        @default(true)
+  lastTriggered DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  triggers      AlertTrigger[]
+
+  @@index([userId])
+  @@index([portfolioId])
+  @@index([isActive])
+}
+
+model AlertTrigger {
+  id             String   @id @default(cuid())
+  alertId        String
+  alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  triggeredAt    DateTime @default(now())
+  priceAtTrigger Float?
+  metadata       Json?
+  notificationId String?
+
+  @@index([alertId])
+}
+
+model AIInsight {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolioId String?
+  portfolio   Portfolio?  @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  insightType InsightType
+  title       String
+  content     String      @db.Text
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([portfolioId])
+  @@index([createdAt])
+}
+
+enum InsightType {
+  DAILY_SUMMARY
+  EVENT_DRIVEN
+  ON_DEMAND
+}
+
+// Notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
