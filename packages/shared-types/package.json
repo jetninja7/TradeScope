@@ -6,6 +6,9 @@
   "scripts": {
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@tradescope/database": "file:../database"
+  },
   "devDependencies": {
     "typescript": "^5.3.0"
   }
