@@ -44,8 +44,8 @@ model Holding {
   portfolio        Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   symbol           String
   assetType        AssetType
-  quantity         Float
-  avgPurchasePrice Float
+  quantity         Decimal   @db.Decimal(18, 8)
+  avgPurchasePrice Decimal   @db.Decimal(18, 8)
   notes            String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -93,7 +93,7 @@ model PriceSnapshot {
   id        String   @id @default(cuid())
   assetId   String
   asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  price     Float
+  price     Decimal  @db.Decimal(18, 8)
   volume    Float?
   marketCap Float?
   source    String
@@ -107,10 +107,10 @@ model PriceHistory {
   assetId   String
   asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
   interval  String
-  open      Float
-  high      Float
-  low       Float
-  close     Float
+  open      Decimal  @db.Decimal(18, 8)
+  high      Decimal  @db.Decimal(18, 8)
+  low       Decimal  @db.Decimal(18, 8)
+  close     Decimal  @db.Decimal(18, 8)
   volume    Float?
   timestamp DateTime
 
@@ -143,7 +143,7 @@ model AlertTrigger {
   alertId        String
   alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   triggeredAt    DateTime @default(now())
-  priceAtTrigger Float?
+  priceAtTrigger Decimal? @db.Decimal(18, 8)
   metadata       Json?
   notificationId String?
 

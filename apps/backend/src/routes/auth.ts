@@ -12,6 +12,9 @@ import { authenticate, type AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // POST /auth/register
 router.post('/register', async (req, res, next) => {
   try {
@@ -20,6 +23,10 @@ router.post('/register', async (req, res, next) => {
     // Validate input
     if (!email || !password) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Email and password are required');
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid email format');
     }
 
     if (password.length < 8) {
@@ -68,6 +75,10 @@ router.post('/login', async (req, res, next) => {
     // Validate input
     if (!email || !password) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Email and password are required');
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid email format');
     }
 
     // Find user
