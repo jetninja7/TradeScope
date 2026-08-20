@@ -9,8 +9,10 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { AppError } from '../middleware/errorHandler';
 import { authenticate, type AuthRequest } from '../middleware/auth';
+import { PortfolioService } from '../services/portfolioService';
 
 const router = express.Router();
+const portfolioService = new PortfolioService();
 
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,6 +50,9 @@ router.post('/register', async (req, res, next) => {
         name,
       },
     });
+
+    // Create default portfolio for new user
+    await portfolioService.createDefaultPortfolio(user.id);
 
     // Generate token
     const token = generateToken({ userId: user.id, email: user.email });
