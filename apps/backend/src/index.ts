@@ -3,6 +3,8 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
+import { authenticate } from './middleware/auth';
+import { verifyPortfolioOwnership } from './middleware/ownership';
 import authRoutes from './routes/auth';
 
 const app = express();
@@ -36,6 +38,11 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authLimiter, authRoutes); // Apply stricter rate limit to auth routes
+
+// Temporary test route for ownership middleware
+app.get('/portfolios/:id', authenticate, verifyPortfolioOwnership, (req, res) => {
+  res.json({ message: 'OK' });
+});
 
 // Error handler (must be last)
 app.use(errorHandler);
