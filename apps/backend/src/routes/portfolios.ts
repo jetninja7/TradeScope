@@ -28,7 +28,7 @@ router.get('/', authenticate, async (req: AuthRequest, res, next) => {
 });
 
 // GET /portfolios/:id - Get portfolio with holdings
-router.get('/:id', authenticate, verifyPortfolioOwnership, async (req: AuthRequest, res, next) => {
+router.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const portfolio = await prisma.portfolio.findUnique({
       where: { id: req.params.id },
@@ -43,19 +43,12 @@ router.get('/:id', authenticate, verifyPortfolioOwnership, async (req: AuthReque
       throw new AppError(404, 'NOT_FOUND', 'Portfolio not found');
     }
 
-    // Map holdings to include null price fields (for Phase 2B)
-    const portfolioWithPrices = {
-      ...portfolio,
-      holdings: (portfolio.holdings || []).map(h => ({
-        ...h,
-        currentPrice: null,
-        totalValue: null,
-        profitLoss: null,
-        profitLossPercent: null
-      }))
-    };
+    // Verify ownership
+    if (portfolio.userId !== req.userId) {
+      throw new AppError(403, 'FORBIDDEN', 'Access denied');
+    }
 
-    res.json(portfolioWithPrices);
+    res.json(portfolio);
   } catch (error) {
     next(error);
   }
@@ -75,7 +68,7 @@ router.patch('/:id', authenticate, verifyPortfolioOwnership, async (req: AuthReq
       throw new AppError(400, 'VALIDATION_ERROR', 'Name must be 1-100 characters');
     }
 
-    const updateData: any = {};
+    const updateData: { name?: string; description?: string | null } = {};
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
 

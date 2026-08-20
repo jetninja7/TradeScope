@@ -94,10 +94,8 @@ describe('Portfolio Routes', () => {
         holdings: [],
       };
 
-      // Mock ownership check
-      (mockedPrisma.portfolio.findUnique as jest.Mock)
-        .mockResolvedValueOnce({ userId }) // First call for ownership check
-        .mockResolvedValueOnce(mockPortfolio); // Second call for actual data
+      // Mock single database call that includes ownership check
+      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(mockPortfolio);
 
       const response = await request(app)
         .get(`/portfolios/${portfolioId}`)
@@ -111,8 +109,18 @@ describe('Portfolio Routes', () => {
     });
 
     it('should return 403 for another user\'s portfolio', async () => {
-      // Mock ownership check - different user
-      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({ userId });
+      // Mock portfolio owned by different user
+      const mockPortfolio = {
+        id: portfolioId,
+        userId, // owned by userId, but accessed by otherUserId
+        name: 'Test Portfolio',
+        description: 'Test description',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        holdings: [],
+      };
+
+      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(mockPortfolio);
 
       const response = await request(app)
         .get(`/portfolios/${portfolioId}`)

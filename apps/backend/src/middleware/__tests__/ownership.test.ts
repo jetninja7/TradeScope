@@ -44,19 +44,16 @@ describe('Ownership Middleware', () => {
 
   describe('verifyPortfolioOwnership', () => {
     it('should allow owner to access their portfolio', async () => {
-      // Mock successful portfolio ownership check (first call in middleware)
-      // Then mock the actual portfolio data fetch (second call in route handler)
-      (mockedPrisma.portfolio.findUnique as jest.Mock)
-        .mockResolvedValueOnce({ userId: user1Id })
-        .mockResolvedValueOnce({
-          id: user1PortfolioId,
-          userId: user1Id,
-          name: 'Test Portfolio',
-          description: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          holdings: [],
-        });
+      // Mock portfolio data fetch with ownership included
+      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({
+        id: user1PortfolioId,
+        userId: user1Id,
+        name: 'Test Portfolio',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        holdings: [],
+      });
 
       const response = await request(app)
         .get(`/portfolios/${user1PortfolioId}`)
@@ -64,16 +61,18 @@ describe('Ownership Middleware', () => {
 
       expect(response.status).not.toBe(403);
       expect(response.status).toBe(200);
-      expect(mockedPrisma.portfolio.findUnique).toHaveBeenCalledWith({
-        where: { id: user1PortfolioId },
-        select: { userId: true }
-      });
     });
 
     it('should return 403 when user tries to access another user\'s portfolio', async () => {
       // Mock portfolio owned by user1, but accessed by user2
       (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({
+        id: user1PortfolioId,
         userId: user1Id,
+        name: 'Test Portfolio',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        holdings: [],
       });
 
       const response = await request(app)
