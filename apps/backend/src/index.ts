@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
 import { verifyPortfolioOwnership, verifyHoldingOwnership } from './middleware/ownership';
 import authRoutes from './routes/auth';
+import portfolioRoutes from './routes/portfolios';
 
 const app = express();
 
@@ -38,12 +39,9 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authLimiter, authRoutes); // Apply stricter rate limit to auth routes
+app.use('/portfolios', portfolioRoutes);
 
-// Temporary test routes for ownership middleware
-app.get('/portfolios/:id', authenticate, verifyPortfolioOwnership, (req, res) => {
-  res.json({ message: 'OK' });
-});
-
+// Temporary test route for holding ownership middleware
 app.get('/holdings/:id', authenticate, verifyHoldingOwnership, (req, res) => {
   res.json({ message: 'OK' });
 });
