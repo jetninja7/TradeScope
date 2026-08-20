@@ -79,7 +79,7 @@ router.patch('/holdings/:id', authenticate, verifyHoldingOwnership, async (req: 
       throw new AppError(400, 'VALIDATION_ERROR', 'Notes must be 500 characters or less');
     }
 
-    const updateData: any = {};
+    const updateData: { quantity?: any; avgPurchasePrice?: any; notes?: string | null } = {};
     if (quantity !== undefined) updateData.quantity = new Decimal(quantity) as any;
     if (avgPurchasePrice !== undefined) updateData.avgPurchasePrice = new Decimal(avgPurchasePrice) as any;
     if (notes !== undefined) updateData.notes = notes;

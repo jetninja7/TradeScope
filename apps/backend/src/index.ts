@@ -43,11 +43,6 @@ app.use('/auth', authLimiter, authRoutes); // Apply stricter rate limit to auth 
 app.use('/portfolios', portfolioRoutes);
 app.use('/', holdingsRoutes); // Register holdings routes (includes /portfolios and /holdings paths)
 
-// Temporary test route for holding ownership middleware (used by ownership.test.ts)
-app.get('/holdings/:id', authenticate, verifyHoldingOwnership, (req, res) => {
-  res.json({ message: 'OK' });
-});
-
 // Error handler (must be last)
 app.use(errorHandler);
 

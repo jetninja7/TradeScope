@@ -9,10 +9,8 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { AppError } from '../middleware/errorHandler';
 import { authenticate, type AuthRequest } from '../middleware/auth';
-import { PortfolioService } from '../services/portfolioService';
 
 const router = express.Router();
-const portfolioService = new PortfolioService();
 
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,18 +39,27 @@ router.post('/register', async (req, res, next) => {
       throw new AppError(409, 'USER_EXISTS', 'User with this email already exists');
     }
 
-    // Hash password and create user
+    // Hash password and create user + portfolio atomically
     const passwordHash = await hashPassword(password);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-      },
-    });
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          name,
+        },
+      });
 
-    // Create default portfolio for new user
-    await portfolioService.createDefaultPortfolio(user.id);
+      await tx.portfolio.create({
+        data: {
+          userId: newUser.id,
+          name: 'My Portfolio',
+          description: null,
+        },
+      });
+
+      return newUser;
+    });
 
     // Generate token
     const token = generateToken({ userId: user.id, email: user.email });

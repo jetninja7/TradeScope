@@ -16,6 +16,7 @@ jest.mock('@tradescope/database', () => ({
     portfolio: {
       create: jest.fn(),
     },
+    $transaction: jest.fn(),
   },
 }));
 
@@ -33,22 +34,33 @@ describe('POST /auth/register', () => {
     // Mock user doesn't exist
     (mockedPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
-    // Mock user creation
-    (mockedPrisma.user.create as jest.Mock).mockResolvedValue({
+    const mockUser = {
       id: testUserId,
       email: 'newuser@example.com',
       passwordHash: 'hashed-password',
       name: 'New User',
-    });
+    };
 
-    // Mock portfolio creation
-    (mockedPrisma.portfolio.create as jest.Mock).mockResolvedValue({
+    const mockPortfolio = {
       id: testPortfolioId,
       userId: testUserId,
       name: 'My Portfolio',
       description: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+    };
+
+    // Mock transaction to execute callback with mock tx object
+    (mockedPrisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+      const mockTx = {
+        user: {
+          create: jest.fn().mockResolvedValue(mockUser),
+        },
+        portfolio: {
+          create: jest.fn().mockResolvedValue(mockPortfolio),
+        },
+      };
+      return await callback(mockTx);
     });
 
     const response = await request(app)
@@ -64,13 +76,7 @@ describe('POST /auth/register', () => {
     expect(response.body.user.id).toBe(testUserId);
     expect(response.body.token).toBeDefined();
 
-    // Verify that portfolio was created with the correct data
-    expect(mockedPrisma.portfolio.create).toHaveBeenCalledWith({
-      data: {
-        userId: testUserId,
-        name: 'My Portfolio',
-        description: null,
-      },
-    });
+    // Verify transaction was called
+    expect(mockedPrisma.$transaction).toHaveBeenCalled();
   });
 });

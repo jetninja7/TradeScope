@@ -99,7 +99,7 @@ describe('Ownership Middleware', () => {
   });
 
   describe('verifyHoldingOwnership', () => {
-    it('should allow owner to access their holding', async () => {
+    it('should allow owner to delete their holding', async () => {
       // Mock successful holding ownership check with portfolio relation
       (mockedPrisma.holding.findUnique as jest.Mock).mockResolvedValue({
         portfolio: {
@@ -107,12 +107,15 @@ describe('Ownership Middleware', () => {
         },
       });
 
+      // Mock successful delete operation
+      (mockedPrisma.holding.delete as jest.Mock) = jest.fn().mockResolvedValue({});
+
       const response = await request(app)
-        .get(`/holdings/${user1HoldingId}`)
+        .delete(`/holdings/${user1HoldingId}`)
         .set('Authorization', `Bearer ${user1Token}`);
 
       expect(response.status).not.toBe(403);
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(204);
       expect(mockedPrisma.holding.findUnique).toHaveBeenCalledWith({
         where: { id: user1HoldingId },
         include: {
@@ -123,7 +126,7 @@ describe('Ownership Middleware', () => {
       });
     });
 
-    it('should return 403 when user tries to access another user\'s holding', async () => {
+    it('should return 403 when user tries to delete another user\'s holding', async () => {
       // Mock holding owned by user1's portfolio, accessed by user2
       (mockedPrisma.holding.findUnique as jest.Mock).mockResolvedValue({
         portfolio: {
@@ -132,7 +135,7 @@ describe('Ownership Middleware', () => {
       });
 
       const response = await request(app)
-        .get(`/holdings/${user1HoldingId}`)
+        .delete(`/holdings/${user1HoldingId}`)
         .set('Authorization', `Bearer ${user2Token}`);
 
       expect(response.status).toBe(403);
@@ -145,7 +148,7 @@ describe('Ownership Middleware', () => {
       (mockedPrisma.holding.findUnique as jest.Mock).mockResolvedValue(null);
 
       const response = await request(app)
-        .get('/holdings/nonexistent')
+        .delete('/holdings/nonexistent')
         .set('Authorization', `Bearer ${user1Token}`);
 
       expect(response.status).toBe(404);
