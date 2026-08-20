@@ -4,9 +4,10 @@ import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { authenticate } from './middleware/auth';
-import { verifyPortfolioOwnership, verifyHoldingOwnership } from './middleware/ownership';
+import { verifyHoldingOwnership } from './middleware/ownership';
 import authRoutes from './routes/auth';
 import portfolioRoutes from './routes/portfolios';
+import holdingsRoutes from './routes/holdings';
 
 const app = express();
 
@@ -40,8 +41,9 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/auth', authLimiter, authRoutes); // Apply stricter rate limit to auth routes
 app.use('/portfolios', portfolioRoutes);
+app.use('/', holdingsRoutes); // Register holdings routes (includes /portfolios and /holdings paths)
 
-// Temporary test route for holding ownership middleware
+// Temporary test route for holding ownership middleware (used by ownership.test.ts)
 app.get('/holdings/:id', authenticate, verifyHoldingOwnership, (req, res) => {
   res.json({ message: 'OK' });
 });
