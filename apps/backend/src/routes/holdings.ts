@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma, AssetType } from '@tradescope/database';
+import { Decimal } from '@prisma/client/runtime/library';
 import { authenticate, type AuthRequest } from '../middleware/auth';
 import { verifyPortfolioOwnership, verifyHoldingOwnership } from '../middleware/ownership';
 import { AppError } from '../middleware/errorHandler';
@@ -43,8 +44,8 @@ router.post(
           portfolioId,
           symbol: symbol.toUpperCase(),
           assetType: assetType as AssetType,
-          quantity,
-          avgPurchasePrice,
+          quantity: new Decimal(quantity) as any,
+          avgPurchasePrice: new Decimal(avgPurchasePrice) as any,
           notes: notes || null
         }
       });
@@ -79,8 +80,8 @@ router.patch('/holdings/:id', authenticate, verifyHoldingOwnership, async (req: 
     }
 
     const updateData: any = {};
-    if (quantity !== undefined) updateData.quantity = quantity;
-    if (avgPurchasePrice !== undefined) updateData.avgPurchasePrice = avgPurchasePrice;
+    if (quantity !== undefined) updateData.quantity = new Decimal(quantity) as any;
+    if (avgPurchasePrice !== undefined) updateData.avgPurchasePrice = new Decimal(avgPurchasePrice) as any;
     if (notes !== undefined) updateData.notes = notes;
 
     const holding = await prisma.holding.update({

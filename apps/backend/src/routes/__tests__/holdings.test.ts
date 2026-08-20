@@ -185,6 +185,53 @@ describe('Holdings Routes', () => {
       expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
+    it('should return 400 for notes exceeding 500 characters', async () => {
+      // Mock portfolio ownership verification
+      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({
+        id: portfolioId,
+        userId: userId,
+      });
+
+      const longNotes = 'a'.repeat(501); // 501 characters
+
+      const response = await request(app)
+        .post(`/portfolios/${portfolioId}/holdings`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          symbol: 'BTC',
+          assetType: 'CRYPTO',
+          quantity: 1.0,
+          avgPurchasePrice: 45000.00,
+          notes: longNotes
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toContain('500 characters');
+    });
+
+    it('should return 400 for invalid assetType', async () => {
+      // Mock portfolio ownership verification
+      (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({
+        id: portfolioId,
+        userId: userId,
+      });
+
+      const response = await request(app)
+        .post(`/portfolios/${portfolioId}/holdings`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          symbol: 'BTC',
+          assetType: 'INVALID',
+          quantity: 1.0,
+          avgPurchasePrice: 45000.00
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toContain('CRYPTO or STOCK');
+    });
+
     it('should return 403 for another user\'s portfolio', async () => {
       // Mock portfolio owned by different user
       (mockedPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({
